@@ -48,10 +48,10 @@ public class JobTemplateServiceImpl implements JobTemplateService {
         int list_count = jobTemplateMapper.pageListCount(start, length, jobGroup, jobDesc, executorHandler, userId, projectIds);
 
         // package result
-        Map<String, Object> maps = new HashMap<>();
-        maps.put("recordsTotal", list_count);        // 总记录数
-        maps.put("recordsFiltered", list_count);    // 过滤后的总记录数
-        maps.put("data", list);                    // 分页列表
+        Map<String, Object> maps = new HashMap<>(3);
+        maps.put("recordsTotal", list_count);
+        maps.put("recordsFiltered", list_count);
+        maps.put("data", list);
         return maps;
     }
 
@@ -80,7 +80,7 @@ public class JobTemplateServiceImpl implements JobTemplateService {
         if (GlueTypeEnum.match(jobTemplate.getGlueType()) == null) {
             return new ReturnT<String>(ReturnT.FAIL_CODE, (I18nUtil.getString("jobinfo_field_gluetype") + I18nUtil.getString("system_invalid")));
         }
-        if (GlueTypeEnum.BEAN == GlueTypeEnum.match(jobTemplate.getGlueType()) && (jobTemplate.getExecutorHandler() == null || jobTemplate.getExecutorHandler().trim().length() == 0)) {
+        if (GlueTypeEnum.DATAX == GlueTypeEnum.match(jobTemplate.getGlueType()) && (jobTemplate.getExecutorHandler() == null || jobTemplate.getExecutorHandler().trim().length() == 0)) {
             return new ReturnT<String>(ReturnT.FAIL_CODE, (I18nUtil.getString("system_please_input") + "JobHandler"));
         }
 

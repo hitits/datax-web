@@ -1,5 +1,6 @@
 package com.wugui.datax.admin.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.wugui.datatx.core.biz.model.ReturnT;
 import com.wugui.datatx.core.enums.ExecutorBlockStrategyEnum;
 import com.wugui.datatx.core.glue.GlueTypeEnum;
@@ -8,8 +9,8 @@ import com.wugui.datax.admin.core.cron.CronExpression;
 import com.wugui.datax.admin.core.route.ExecutorRouteStrategyEnum;
 import com.wugui.datax.admin.core.thread.JobScheduleHelper;
 import com.wugui.datax.admin.core.util.I18nUtil;
-import com.wugui.datax.admin.dto.DataXBatchJsonBuildDto;
-import com.wugui.datax.admin.dto.DataXJsonBuildDto;
+import com.wugui.datax.admin.dto.DataXBatchJsonBuildDTO;
+import com.wugui.datax.admin.dto.DataXJsonBuildDTO;
 import com.wugui.datax.admin.entity.JobGroup;
 import com.wugui.datax.admin.entity.JobInfo;
 import com.wugui.datax.admin.entity.JobLogReport;
@@ -65,13 +66,14 @@ public class JobServiceImpl implements JobService {
         int list_count = jobInfoMapper.pageListCount(start, length, jobGroup, triggerStatus, jobDesc, glueType, userId, projectIds);
 
         // package result
-        Map<String, Object> maps = new HashMap<>();
-        maps.put("recordsTotal", list_count);        // 总记录数
-        maps.put("recordsFiltered", list_count);    // 过滤后的总记录数
-        maps.put("data", list);                    // 分页列表
+        Map<String, Object> maps = new HashMap<>(3);
+        maps.put("recordsTotal", list_count);
+        maps.put("recordsFiltered", list_count);
+        maps.put("data", list);
         return maps;
     }
 
+    @Override
     public List<JobInfo> list() {
         return jobInfoMapper.findAll();
     }
@@ -86,13 +88,13 @@ public class JobServiceImpl implements JobService {
         if (!CronExpression.isValidExpression(jobInfo.getJobCron())) {
             return new ReturnT<>(ReturnT.FAIL_CODE, I18nUtil.getString("jobinfo_field_cron_invalid"));
         }
-        if (jobInfo.getGlueType().equals(GlueTypeEnum.BEAN.getDesc()) && jobInfo.getJobJson().trim().length() <= 2) {
+        if (jobInfo.getGlueType().equals(GlueTypeEnum.DATAX.getDesc()) && jobInfo.getJobJson().trim().length() <= 2) {
             return new ReturnT<>(ReturnT.FAIL_CODE, (I18nUtil.getString("system_please_input") + I18nUtil.getString("jobinfo_field_jobjson")));
         }
         if (jobInfo.getJobDesc() == null || jobInfo.getJobDesc().trim().length() == 0) {
             return new ReturnT<>(ReturnT.FAIL_CODE, (I18nUtil.getString("system_please_input") + I18nUtil.getString("jobinfo_field_jobdesc")));
         }
-        if (jobInfo.getUserId() == 0 ) {
+        if (jobInfo.getUserId() == 0) {
             return new ReturnT<>(ReturnT.FAIL_CODE, (I18nUtil.getString("system_please_input") + I18nUtil.getString("jobinfo_field_author")));
         }
         if (ExecutorRouteStrategyEnum.match(jobInfo.getExecutorRouteStrategy(), null) == null) {
@@ -104,7 +106,8 @@ public class JobServiceImpl implements JobService {
         if (GlueTypeEnum.match(jobInfo.getGlueType()) == null) {
             return new ReturnT<>(ReturnT.FAIL_CODE, (I18nUtil.getString("jobinfo_field_gluetype") + I18nUtil.getString("system_invalid")));
         }
-        if (GlueTypeEnum.BEAN == GlueTypeEnum.match(jobInfo.getGlueType()) && (jobInfo.getExecutorHandler() == null || jobInfo.getExecutorHandler().trim().length() == 0)) {
+        if ((GlueTypeEnum.DATAX == GlueTypeEnum.match(jobInfo.getGlueType()) || GlueTypeEnum.JAVA_BEAN == GlueTypeEnum.match(jobInfo.getGlueType()))
+                && (jobInfo.getExecutorHandler() == null || jobInfo.getExecutorHandler().trim().length() == 0)) {
             return new ReturnT<>(ReturnT.FAIL_CODE, (I18nUtil.getString("system_please_input") + "JobHandler"));
         }
 
@@ -116,6 +119,13 @@ public class JobServiceImpl implements JobService {
         // fix "\r" in shell
         if (GlueTypeEnum.GLUE_SHELL == GlueTypeEnum.match(jobInfo.getGlueType()) && jobInfo.getGlueSource() != null) {
             jobInfo.setGlueSource(jobInfo.getGlueSource().replaceAll("\r", ""));
+        }
+
+        // compress
+        if (GlueTypeEnum.DATAX == GlueTypeEnum.match(jobInfo.getGlueType()) || GlueTypeEnum.JAVA_BEAN == GlueTypeEnum.match(jobInfo.getGlueType())) {
+            if (StringUtils.isNotBlank(jobInfo.getJobJson())) {
+                jobInfo.setJobJson(jsonMin(jobInfo.getJobJson()));
+            }
         }
 
         // ChildJobId valid
@@ -173,7 +183,7 @@ public class JobServiceImpl implements JobService {
         if (!CronExpression.isValidExpression(jobInfo.getJobCron())) {
             return new ReturnT<>(ReturnT.FAIL_CODE, I18nUtil.getString("jobinfo_field_cron_invalid"));
         }
-        if (jobInfo.getGlueType().equals(GlueTypeEnum.BEAN.getDesc()) && jobInfo.getJobJson().trim().length() <= 2) {
+        if (jobInfo.getGlueType().equals(GlueTypeEnum.DATAX.getDesc()) && jobInfo.getJobJson().trim().length() <= 2) {
             return new ReturnT<>(ReturnT.FAIL_CODE, (I18nUtil.getString("system_please_input") + I18nUtil.getString("jobinfo_field_jobjson")));
         }
         if (jobInfo.getJobDesc() == null || jobInfo.getJobDesc().trim().length() == 0) {
@@ -253,8 +263,8 @@ public class JobServiceImpl implements JobService {
         exists_jobInfo.setTriggerNextTime(nextTriggerTime);
         exists_jobInfo.setUpdateTime(new Date());
 
-        if (GlueTypeEnum.BEAN.getDesc().equals(jobInfo.getGlueType())) {
-            exists_jobInfo.setJobJson(jobInfo.getJobJson());
+        if (GlueTypeEnum.DATAX == GlueTypeEnum.match(jobInfo.getGlueType()) || GlueTypeEnum.JAVA_BEAN == GlueTypeEnum.match(jobInfo.getGlueType())) {
+            exists_jobInfo.setJobJson(jsonMin(jobInfo.getJobJson()));
             exists_jobInfo.setGlueSource(null);
         } else {
             exists_jobInfo.setGlueSource(jobInfo.getGlueSource());
@@ -345,7 +355,7 @@ public class JobServiceImpl implements JobService {
 
         int executorCount = executorAddressSet.size();
 
-        Map<String, Object> dashboardMap = new HashMap<>();
+        Map<String, Object> dashboardMap = new HashMap<>(4);
         dashboardMap.put("jobInfoCount", jobInfoCount);
         dashboardMap.put("jobLogCount", jobLogCount);
         dashboardMap.put("jobLogSuccessCount", jobLogSuccessCount);
@@ -391,7 +401,7 @@ public class JobServiceImpl implements JobService {
             }
         }
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>(7);
         result.put("triggerDayList", triggerDayList);
         result.put("triggerDayCountRunningList", triggerDayCountRunningList);
         result.put("triggerDayCountSucList", triggerDayCountSucList);
@@ -406,7 +416,7 @@ public class JobServiceImpl implements JobService {
 
 
     @Override
-    public ReturnT<String> batchAdd(DataXBatchJsonBuildDto dto) throws IOException {
+    public ReturnT<String> batchAdd(DataXBatchJsonBuildDTO dto) throws IOException {
 
         String key = "system_please_choose";
         List<String> rdTables = dto.getReaderTables();
@@ -421,7 +431,7 @@ public class JobServiceImpl implements JobService {
             return new ReturnT<>(ReturnT.FAIL_CODE, I18nUtil.getString("json_build_inconsistent_number_r_w_tables"));
         }
 
-        DataXJsonBuildDto jsonBuild = new DataXJsonBuildDto();
+        DataXJsonBuildDTO jsonBuild = new DataXJsonBuildDTO();
 
         List<String> rColumns;
         List<String> wColumns;
@@ -460,4 +470,25 @@ public class JobServiceImpl implements JobService {
         }
         return ReturnT.SUCCESS;
     }
+
+    /**
+     * 压缩JSON字符串，去除多余的空格、换行等，减少数据库存储
+     *
+     * @param json
+     * @return {@link String}
+     * @author jiangyang
+     * @date 2020/10/23
+     */
+    private String jsonMin(String json){
+        String res = null;
+        try {
+            Object object = JSON.parse(json);
+            res = JSON.toJSONString(object);
+        } catch (Exception e) {
+            logger.error("非json字符串");
+            res = json;
+        }
+        return res;
+    }
+
 }

@@ -10,7 +10,7 @@ import com.wugui.datatx.core.glue.GlueTypeEnum;
 import com.wugui.datax.rpc.remoting.invoker.call.CallType;
 import com.wugui.datax.rpc.remoting.invoker.reference.XxlRpcReferenceBean;
 import com.wugui.datax.rpc.remoting.invoker.route.LoadBalance;
-import com.wugui.datax.rpc.remoting.net.impl.netty_http.client.NettyHttpClient;
+import com.wugui.datax.rpc.remoting.net.impl.netty.http.client.NettyHttpClient;
 import com.wugui.datax.rpc.serialize.impl.HessianSerializer;
 import org.junit.After;
 import org.junit.Assert;
@@ -129,7 +129,7 @@ public class ExecutorBizImplTest {
         triggerParam.setExecutorHandler("demoJobHandler");
         triggerParam.setExecutorParams(null);
         triggerParam.setExecutorBlockStrategy(ExecutorBlockStrategyEnum.COVER_EARLY.name());
-        triggerParam.setGlueType(GlueTypeEnum.BEAN.name());
+        triggerParam.setGlueType(GlueTypeEnum.DATAX.name());
         triggerParam.setGlueSource(null);
         triggerParam.setGlueUpdatetime(System.currentTimeMillis());
         triggerParam.setLogId(1);
