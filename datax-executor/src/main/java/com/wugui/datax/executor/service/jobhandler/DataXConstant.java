@@ -19,6 +19,10 @@ public class DataXConstant {
 
     public static final String PARAMS_CM = "-p";
 
+
+    public static final String PARAMS_SYSTEM = "-D";
+    public static final String PARAMS_EQUALS = "=";
+
     public static final String PARAMS_CM_V_PT = "-Dpartition=%s";
 
     public static final String DEFAULT_JSON = "jsons";
@@ -33,4 +37,12 @@ public class DataXConstant {
     public static final String TASK_RECORD_WRITING_SPEED_SUFFIX = "记录写入速度";
     public static final String TASK_RECORD_READER_NUM_SUFFIX = "读出记录总数";
     public static final String TASK_RECORD_WRITING_NUM_SUFFIX = "读写失败总数";
+
+    public static final String DATAX_SCRIPT_YARN =  "yarn jar {} com.on.yarn.Client " +
+            "-jar_path {} " +
+            "-appname {} " +
+            "-master_memory {} " +
+            "-queue {} " +
+            "-datax_job {} " +
+            "-datax_home_hdfs {} ";
 }

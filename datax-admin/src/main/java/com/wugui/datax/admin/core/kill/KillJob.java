@@ -10,7 +10,7 @@ import java.util.Date;
 
 /**
  * datax-job trigger
- * Created by jingwk on 2019/12/15.
+ * @author  jingwk on 2019/12/15.
  */
 public class KillJob {
 
@@ -26,7 +26,7 @@ public class KillJob {
         triggerParam.setExecutorHandler("killJobHandler");
         triggerParam.setProcessId(processId);
         triggerParam.setLogId(logId);
-        triggerParam.setGlueType(GlueTypeEnum.BEAN.getDesc());
+        triggerParam.setGlueType(GlueTypeEnum.DATAX.getDesc());
         triggerParam.setExecutorBlockStrategy(ExecutorBlockStrategyEnum.SERIAL_EXECUTION.getTitle());
         triggerParam.setLogDateTime(triggerTime.getTime());
         if (address != null) {

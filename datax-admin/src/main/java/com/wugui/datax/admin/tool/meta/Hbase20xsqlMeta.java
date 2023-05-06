@@ -8,7 +8,7 @@ package com.wugui.datax.admin.tool.meta;
  * @Version 1.0
  * @since 2019/7/17 15:48
  */
-public class Hbase20xsqlMeta extends BaseDatabaseMeta implements DatabaseInterface {
+public class Hbase20xsqlMeta extends BaseDatabaseMeta {
 
     private volatile static Hbase20xsqlMeta single;
 
@@ -21,11 +21,5 @@ public class Hbase20xsqlMeta extends BaseDatabaseMeta implements DatabaseInterfa
             }
         }
         return single;
-    }
-
-
-    @Override
-    public String getSQLQueryTables(String... tableSchema) {
-        return null;
     }
 }

@@ -5,10 +5,11 @@ public interface DatabaseInterface {
     /**
      * Returns the minimal SQL to launch in order to determine the layout of the resultset for a given com.com.wugui.datax.admin.tool.database table
      *
+     * @param tableSchema the schema of the table
      * @param tableName The name of the table to determine the layout for
      * @return The SQL to launch.
      */
-    String getSQLQueryFields(String tableName);
+    String getSQLQueryFields(String tableSchema, String tableName);
 
     /**
      * 获取主键字段
@@ -17,16 +18,26 @@ public interface DatabaseInterface {
      */
     String getSQLQueryPrimaryKey();
 
+    /**
+     * getSQLQueryTableNameComment
+     * @return
+     */
     String getSQLQueryTableNameComment();
 
+    /**
+     * getSQLQueryTablesNameComments
+     * @return
+     */
     String getSQLQueryTablesNameComments();
+
 
     /**
      * 获取所有表名的sql
-     *
+     * @param tableSchema
      * @return
      */
     String getSQLQueryTables(String... tableSchema);
+
 
     /**
      * 获取所有表名的sql
@@ -37,10 +48,11 @@ public interface DatabaseInterface {
 
     /**
      * 获取 Table schema
-     *
+     * @param args
      * @return
      */
     String getSQLQueryTableSchema(String... args);
+
     /**
      * 获取所有的字段的sql
      *

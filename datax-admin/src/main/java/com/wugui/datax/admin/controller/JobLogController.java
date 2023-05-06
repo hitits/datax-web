@@ -3,6 +3,7 @@ package com.wugui.datax.admin.controller;
 import com.wugui.datatx.core.biz.ExecutorBiz;
 import com.wugui.datatx.core.biz.model.LogResult;
 import com.wugui.datatx.core.biz.model.ReturnT;
+import com.wugui.datatx.core.glue.GlueTypeEnum;
 import com.wugui.datatx.core.util.DateUtil;
 import com.wugui.datax.admin.core.kill.KillJob;
 import com.wugui.datax.admin.core.scheduler.JobScheduler;
@@ -24,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by jingwk on 2019/11/17
+ * @author jingwk on 2019/11/17
  */
 @RestController
 @RequestMapping("/api/log")
@@ -63,10 +64,10 @@ public class JobLogController {
         int cnt = jobLogMapper.pageListCount((current - 1) * size, size, jobGroup, jobId, triggerTimeStart, triggerTimeEnd, logStatus);
 
         // package result
-        Map<String, Object> maps = new HashMap<>();
-        maps.put("recordsTotal", cnt);        // 总记录数
-        maps.put("recordsFiltered", cnt);    // 过滤后的总记录数
-        maps.put("data", data);                    // 分页列表
+        Map<String, Object> maps = new HashMap<>(3);
+        maps.put("recordsTotal", cnt);
+        maps.put("recordsFiltered", cnt);
+        maps.put("data", data);
         return new ReturnT<>(maps);
     }
 
@@ -94,7 +95,7 @@ public class JobLogController {
 
     @RequestMapping(value = "/logKill", method = RequestMethod.POST)
     @ApiOperation("kill任务")
-    public ReturnT<String> logKill(int id) {
+    public ReturnT<String> logKill(long id) {
         // base check
         JobLog log = jobLogMapper.load(id);
         JobInfo jobInfo = jobInfoMapper.loadById(log.getJobId());
@@ -133,23 +134,23 @@ public class JobLogController {
         Date clearBeforeTime = null;
         int clearBeforeNum = 0;
         if (type == 1) {
-            clearBeforeTime = DateUtil.addMonths(new Date(), -1);    // 清理一个月之前日志数据
+            clearBeforeTime = DateUtil.addMonths(new Date(), -1);
         } else if (type == 2) {
-            clearBeforeTime = DateUtil.addMonths(new Date(), -3);    // 清理三个月之前日志数据
+            clearBeforeTime = DateUtil.addMonths(new Date(), -3);
         } else if (type == 3) {
-            clearBeforeTime = DateUtil.addMonths(new Date(), -6);    // 清理六个月之前日志数据
+            clearBeforeTime = DateUtil.addMonths(new Date(), -6);
         } else if (type == 4) {
-            clearBeforeTime = DateUtil.addYears(new Date(), -1);    // 清理一年之前日志数据
+            clearBeforeTime = DateUtil.addYears(new Date(), -1);
         } else if (type == 5) {
-            clearBeforeNum = 1000;        // 清理一千条以前日志数据
+            clearBeforeNum = 1000;
         } else if (type == 6) {
-            clearBeforeNum = 10000;        // 清理一万条以前日志数据
+            clearBeforeNum = 10000;
         } else if (type == 7) {
-            clearBeforeNum = 30000;        // 清理三万条以前日志数据
+            clearBeforeNum = 30000;
         } else if (type == 8) {
-            clearBeforeNum = 100000;    // 清理十万条以前日志数据
+            clearBeforeNum = 100000;
         } else if (type == 9) {
-            clearBeforeNum = 0;            // 清理所有日志数据
+            clearBeforeNum = 0;
         } else {
             return new ReturnT<>(ReturnT.FAIL_CODE, I18nUtil.getString("joblog_clean_type_invalid"));
         }
@@ -168,6 +169,11 @@ public class JobLogController {
     @ApiOperation("停止该job作业")
     @PostMapping("/killJob")
     public ReturnT<String> killJob(@RequestBody JobLog log) {
-        return KillJob.trigger(log.getId(), log.getTriggerTime(), log.getExecutorAddress(), log.getProcessId());
+        JobInfo jobInfo = jobInfoMapper.loadById(log.getJobId());
+        if (GlueTypeEnum.match(jobInfo.getGlueType()) == GlueTypeEnum.DATAX || GlueTypeEnum.match(jobInfo.getGlueType()).isScript()) {
+            return KillJob.trigger(log.getId(), log.getTriggerTime(), log.getExecutorAddress(), log.getProcessId());
+        } else {
+            return this.logKill(log.getId());
+        }
     }
 }
